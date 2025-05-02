@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+<!--    黑色-->
+    <color name="black">#FF000000</color>
+<!--    白色-->
+    <color name="white">#FFFFFFFF</color>
+<!--    绿色-->
+    <color name="green">#00FF00</color>
+<!--    鲜红-->
+    <color name="box1">#FF0000</color>
+<!--    橙红-->
+    <color name="box2">#FF3F00</color>
+<!--    亮橙-->
+    <color name="box3">#FF7F00</color>
+<!--    黄橙-->
+    <color name="box4">#FFBF00</color>
+<!--    明黄-->
+    <color name="box5">#FFFF00</color>
+<!--    黄绿-->
+    <color name="box6">#BFFF00</color>
+<!--    草绿-->
+    <color name="box7">#7FFF00</color>
+<!--    翠绿-->
+    <color name="box8">#00FF00</color>
+<!--    绿松石-->
+    <color name="box9">#00FF7F</color>
+<!--    天蓝-->
+    <color name="box10">#00EEFF</color>
+<!--    湖蓝-->
+    <color name="box11">#00BFFF</color>
+<!--    深蓝-->
+    <color name="box12">#007FFF</color>
+<!--    午夜蓝-->
+    <color name="box13">#0000FF</color>
+<!--    蓝紫-->
+    <color name="box14">#7F00FF</color>
+<!--    品紫-->
+    <color name="box15">#CC00FF</color>
+<!--    玫红-->
+    <color name="box16">#FF00BF</color>
+<!--    粉红-->
+    <color name="box17">#FFBFBF</color>
+<!--    砖红-->
+    <color name="box18">#BF3F00</color>
+<!--    灰蓝-->
+    <color name="box19">#7FBFFF</color>
+<!--    浅灰-->
+    <color name="box20">#BFBFBF</color>
+</resources>
