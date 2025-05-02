@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
@@ -23,6 +24,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
+import com.example.work.Views.DrawLineView;
 import com.example.work.utils.MyRandom;
 
 import java.util.ArrayList;
@@ -54,9 +56,7 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
     //计时文本组件
     TextView txtGameTime;
     //方块尺寸
-    int[] boxSize;
-    //左上角方块左上角相对于组件playground的坐标
-    int[] boxAxis;
+    int[] boxSize = new int[]{0, 0};
     //标题栏高度
     int titleHeight;
     //线程池
@@ -73,8 +73,6 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
         findViewById(R.id.btn_back).setOnClickListener(this);
         executorService = Executors.newFixedThreadPool(1);
         scheduledExecutorService = Executors.newScheduledThreadPool(1);
-
-
         //初始化数据
         initData();
         //计时器
@@ -91,6 +89,12 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
 
     @Override
     public void onClick(View v) {
+        if (Arrays.equals(boxSize, new int[]{0, 0})) {
+            int temp = 11;
+            boxSize = new int[]{findViewById(temp).getWidth(), findViewById(temp).getHeight()};
+            Log.d("click", findViewById(temp).getWidth() + "//" + findViewById(temp).getHeight());
+            titleHeight = findViewById(R.id.title).getHeight();
+        }
         if (v.getId() == R.id.btn_back) {
             startTimer = false;
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -107,7 +111,7 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
             } else if (clickedBoxId != v.getId()) {
                 List<Integer> path = getPath(clickedBoxId, v.getId());
                 if (path.get(0) != 0) {
-                    Log.d("click",v.getId()+"//"+clickedBoxId);
+                    Log.d("click", v.getId() + "//" + clickedBoxId);
                     score++;
                     drawLine(path);
                 }
@@ -187,12 +191,7 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
             TextView txtGameScore = findViewById(R.id.txt_game_score);
             txtGameScore.setText("得分：" + score);
 //            Log.d("Size", findViewById(R.id.gamePage).getHeight() + "//" + findViewById(R.id.title).getHeight() + "//" + findViewById(R.id.playground).getHeight());
-            int temp = 11;
-            boxSize = new int[]{findViewById(temp).getWidth(), findViewById(temp).getHeight()};
-            titleHeight = findViewById(R.id.title).getHeight();
-            boxAxis = new int[2];
-            findViewById(temp).getLocationInWindow(boxAxis);
-            boxAxis[1] -= titleHeight;
+
 //            Log.d("Size", Arrays.toString(boxAxis));
 //            int[] location = new int[2];
 //            findViewById(temp).getLocationInWindow(location);
@@ -222,7 +221,7 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
     private void drawLine(List<Integer> path) {
         Handler uiHandler = new Handler(Looper.getMainLooper());
         uiHandler.post(() -> {
-            Log.d("click",path+"");
+            Log.d("click", path + "");
 //            Log.d("click",clickedBoxId+"");
 //            Log.d("click", String.valueOf(findViewById(path.get(1))==null));
             ImageButton box1 = findViewById(path.get(1));
@@ -236,33 +235,60 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
             box2.getLocationInWindow(box2Location);
             //划线
             FrameLayout playGround = findViewById(R.id.playground);
+
             ImageView lineBoard = new ImageView(this);
             lineBoard.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-            //获取画布
+//            //获取画布
             Bitmap bitmap = Bitmap.createBitmap(playGround.getWidth(), playGround.getHeight(), Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(bitmap);
-            //画笔设置
-            Paint paint = new Paint();
-            paint.setColor(ContextCompat.getColor(this, R.color.black));
+//            canvas.drawColor(Color.BLACK);
+//            //画笔设置
+            Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            paint.setColor(Color.BLACK);
             paint.setAntiAlias(true);
-            paint.setStyle(Paint.Style.FILL);
-            paint.setStrokeWidth(5);
-
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(15);
+//            Log.d("click", "1111");
             //获取坐标点
-            float[] pts = new float[(path.size() - 1) * 2];
-            for (int i = 1; i < path.size(); i++) {
-                float posX;
-                float posY;
-                posX = (float) ((path.get(i) % 10 - 1) * 2 + 1) / 2 * boxSize[0]+boxAxis[0];
-                posY = (float) ((path.get(i) / 10 - 1) * 2 + 1) / 2 * boxSize[1]+boxAxis[1];
-                pts[i * 2 - 2] = posX;
-                pts[i * 2 - 1] = posY;
+
+            float[] pts = new float[(path.size() - 2) * 4];
+//            Log.d("click", "2222");
+            int[] startAxis = new int[2];
+            int[] endAxis = new int[2];
+            findViewById(path.get(1)).getLocationInWindow(startAxis);
+            findViewById(path.get(path.size() - 1)).getLocationInWindow(endAxis);
+            pts[0] = startAxis[0] + (float) boxSize[0] / 2;
+            pts[1] = startAxis[1] + (float) boxSize[1] / 2 - titleHeight;
+            pts[pts.length - 2] = endAxis[0] + (float) boxSize[0] / 2;
+            pts[pts.length - 1] = endAxis[1] + (float) boxSize[1] / 2 - titleHeight;
+            if (path.size() == 4) {
+                pts[2] = pts[0] + (float) (path.get(2) % 10 - path.get(1) % 10) * boxSize[0];
+                pts[3] = pts[1] + (float) (path.get(2) / 10 - path.get(1) / 10) * boxSize[1];
+                pts[pts.length - 4] = pts[pts.length - 2] + (float) (path.get(3) % 10 - path.get(2) % 10) * boxSize[0];
+                pts[pts.length - 3] = pts[pts.length - 1] + (float) (path.get(3) / 10 - path.get(2) / 10) * boxSize[1];
             }
+            if (path.size() == 5) {
+                pts[2] = pts[0] + (float) (path.get(2) % 10 - path.get(1) % 10) * boxSize[0];
+                pts[3] = pts[1] + (float) (path.get(2) / 10 - path.get(1) / 10) * boxSize[1];
+                pts[4] = pts[2];
+                pts[5] = pts[3];
+                pts[pts.length - 6] = pts[pts.length - 2] + (float) (path.get(3) % 10 - path.get(4) % 10) * boxSize[0];
+                pts[pts.length - 5] = pts[pts.length - 1] + (float) (path.get(3) / 10 - path.get(4) / 10) * boxSize[1];
+                pts[pts.length - 4] = pts[pts.length - 6];
+                pts[pts.length - 3] = pts[pts.length - 5];
+            }
+//            Log.d("click", "3333");
+
+//            DrawLineView drawLineView = new DrawLineView(this,pts);
+            Log.d("click", Arrays.toString(pts) + "//" + Arrays.toString(boxSize));
             //划线
+//            canvas.drawLine(pts[0], pts[1], pts[pts.length - 2], pts[pts.length - 1], paint);
             canvas.drawLines(pts, paint);
+//            Log.d("click", bitmap.getWidth()+"//"+bitmap.getHeight());
             lineBoard.setImageBitmap(bitmap);
 //            lineBoard.setBackgroundColor(ContextCompat.getColor(this, R.color.black));
             playGround.addView(lineBoard);
+//            playGround.addView(drawLineView);
             //方块消失
 //            try {
 //                Thread.sleep(500);
@@ -270,12 +296,16 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
 //                throw new RuntimeException(e);
 //            }
 //            playGround.removeView(lineBoard);
-            box1.getBackground().setAlpha(0);
-            box2.getBackground().setAlpha(0);
+            Handler uiHandler2 = new Handler(Looper.getMainLooper());
+            uiHandler2.postDelayed(() -> {
+                playGround.removeView(lineBoard);
+                box1.getBackground().setAlpha(0);
+                box2.getBackground().setAlpha(0);
+            }, 200);
             TextView txtGameScore = findViewById(R.id.txt_game_score);
             txtGameScore.setText("得分：" + score);
             gameBoardBoxesLogic.get(path.get(1) / 10).set(path.get(1) % 10, -1);
-            gameBoardBoxesLogic.get(path.get(path.size()-1) / 10).set(path.get(path.size()-1) % 10, -1);
+            gameBoardBoxesLogic.get(path.get(path.size() - 1) / 10).set(path.get(path.size() - 1) % 10, -1);
         });
     }
 
