@@ -21,8 +21,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".GamePageActivity"
+        <activity android:name=".GamePageActivity"
+            android:exported="true">
+
+        </activity>
+        <activity android:name=".LeaderBoardActivity"
             android:exported="true">
 
         </activity>

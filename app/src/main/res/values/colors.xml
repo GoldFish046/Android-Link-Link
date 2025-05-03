@@ -6,6 +6,8 @@
     <color name="white">#FFFFFFFF</color>
 <!--    绿色-->
     <color name="green">#00FF00</color>
+<!--    蓝色-->
+    <color name="blue">#0000FF</color>
 <!--    鲜红-->
     <color name="box1">#FF0000</color>
 <!--    橙红-->

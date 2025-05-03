@@ -1,18 +1,23 @@
 package com.example.work;
 
 import android.app.AlertDialog;
+import android.content.ContentValues;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.InputFilter;
+import android.text.InputType;
+import android.text.Spanned;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -24,11 +29,14 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
-import com.example.work.Views.DrawLineView;
 import com.example.work.utils.MyRandom;
+import com.example.work.utils.dbConnectHelper;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -63,6 +71,8 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
     private ExecutorService executorService;
     //计时器
     private ScheduledExecutorService scheduledExecutorService;
+    private SQLiteDatabase db;
+    private int hard;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,7 +80,6 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_gamepage);
         txtGameTime = findViewById(R.id.txt_game_time);
-        findViewById(R.id.btn_back).setOnClickListener(this);
         executorService = Executors.newFixedThreadPool(1);
         scheduledExecutorService = Executors.newScheduledThreadPool(1);
         //初始化数据
@@ -87,6 +96,18 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
         scheduledExecutorService.shutdown();
     }
 
+    public void back() {
+        startTimer = false;
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("是否推出当前游戏，推出后游戏记录将会自动保存");
+        builder.setPositiveButton("确定", (dialog, which) -> saveScore());
+        builder.setNegativeButton("取消", (dialog, which) -> {
+            startTimer = true;
+//                timerHandler.postDelayed(timerRunnable, 0);
+        });
+        builder.create().show();
+    }
+
     @Override
     public void onClick(View v) {
         if (Arrays.equals(boxSize, new int[]{0, 0})) {
@@ -95,17 +116,10 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
             Log.d("click", findViewById(temp).getWidth() + "//" + findViewById(temp).getHeight());
             titleHeight = findViewById(R.id.title).getHeight();
         }
-        if (v.getId() == R.id.btn_back) {
-            startTimer = false;
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("确定退出吗，当前游戏进度不会被记录");
-            builder.setPositiveButton("确定", (dialog, which) -> finish());
-            builder.setNegativeButton("取消", (dialog, which) -> {
-                startTimer = true;
-//                timerHandler.postDelayed(timerRunnable, 0);
-            });
-            builder.create().show();
-        } else executorService.execute(() -> {
+/*        if (v.getId() == R.id.btn_back) {
+            back();
+        } else*/
+        executorService.execute(() -> {
             if (clickedBoxId == -1) {
                 clickedBoxId = v.getId();
             } else if (clickedBoxId != v.getId()) {
@@ -128,6 +142,7 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
 
     private void initData() {
         executorService.submit(() -> {
+            db = new dbConnectHelper(this).getWritableDatabase();
             score = 0;
             boxColors = new int[]{R.color.box1, R.color.box2, R.color.box3, R.color.box4, R.color.box5, R.color.box6, R.color.box7, R.color.box8, R.color.box9, R.color.box10
                     , R.color.box11, R.color.box12, R.color.box13, R.color.box14, R.color.box15, R.color.box16, R.color.box17, R.color.box18, R.color.box19, R.color.box20};
@@ -140,12 +155,15 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
                 switch (difficulty) {
                     case "easy":
                         selectColors = MyRandom.selectColors(10);
+                        hard = 1;
                         break;
                     case "normal":
                         selectColors = MyRandom.selectColors(15);
+                        hard = 2;
                         break;
                     case "hard":
                         selectColors = MyRandom.selectColors(20);
+                        hard = 3;
                         break;
                 }
             } else {
@@ -306,7 +324,63 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
             txtGameScore.setText("得分：" + score);
             gameBoardBoxesLogic.get(path.get(1) / 10).set(path.get(1) % 10, -1);
             gameBoardBoxesLogic.get(path.get(path.size() - 1) / 10).set(path.get(path.size() - 1) % 10, -1);
+            if (score == 36) saveScore();
+
         });
+    }
+
+    /**
+     * 保存分数
+     */
+    public void saveScore() {
+        startTimer = false;
+//                scheduledExecutorService.shutdown();
+        ContentValues values = new ContentValues();
+        values.put("score", score);
+        values.put("hard", hard);
+        values.put("time", timer/10);
+        Date date = new Date();
+        SimpleDateFormat DateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String dateString = DateFormat.format(date);
+        Log.d("finishtime", dateString);
+//        String dateString = date.toString();
+        values.put("finishtime", dateString);
+        EditText input = new EditText(this);
+        input.setHint("请输入你的名字");
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        input.setTextColor(Color.BLACK);
+        input.setFilters(new InputFilter[]{new InputFilter.LengthFilter(20), (source, start, end, dest, dstart, dend) -> {
+            if (source.charAt(start) == ' ') return "";
+            else return null;
+        }});
+        if (score == 36) new AlertDialog.Builder(this)
+                .setTitle("恭喜你！")
+                .setMessage("你完成了游戏！留下你的名字吧")
+                .setView(input)
+                .setPositiveButton("确定", (dialog, which) -> {
+                    String name = input.getText().toString();
+                    values.put("name", name);
+                    if(name.isEmpty()) name = "未命名";
+                    db.insert("leaderboard", null, values);
+                    Intent intent = new Intent(GamePageActivity.this, MainActivity.class);
+                    startActivity(intent);
+                    finish();
+                })
+                .show();
+        else new AlertDialog.Builder(this)
+                .setTitle("游戏结束")
+                .setMessage("你的分数为：" + score)
+                .setView(input)
+                .setPositiveButton("确定", (dialog, which) -> {
+                    String name = input.getText().toString();
+                    values.put("name", name);
+                    if(name.isEmpty()) name = "未命名";
+                    db.insert("leaderboard", null, values);
+                    Intent intent = new Intent(GamePageActivity.this, MainActivity.class);
+                    startActivity(intent);
+                    finish();
+                })
+                .show();
     }
 
 

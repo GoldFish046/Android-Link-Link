@@ -10,68 +10,61 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <LinearLayout
-            android:id="@+id/title"
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/fragment_game_page"
+            android:name="com.example.work.fragment.NavigationTop"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:orientation="horizontal"
-            android:background="@color/green"
-            android:padding="10dp"
-            android:layout_weight="1">
-            <ImageButton
-                android:id="@+id/btn_back"
-                android:layout_width="50dp"
-                android:layout_height="match_parent"
-                android:background="@drawable/button_back"
-                android:contentDescription="@string/btn_back"
-                android:src="@drawable/back"
-                android:scaleType="fitCenter"/>
-        </LinearLayout>
+            android:layout_weight="1"/>
+
         <FrameLayout
             android:id="@+id/playground"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="12"
-            android:orientation="vertical"
-            android:background="@color/white">
+            android:background="@color/white"
+            android:orientation="vertical">
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:background="@color/white"
                 android:orientation="vertical"
                 android:paddingHorizontal="40dp"
-                android:paddingVertical="90dp"
-                android:background="@color/white"
-                >
+                android:paddingVertical="90dp">
+
                 <TextView
                     android:id="@+id/txt_game_score"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
-                    android:textColor="@color/black"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:textSize="30sp"
                     android:layout_marginBottom="10dp"
-                    android:background="@color/white"/>
+                    android:layout_weight="1"
+                    android:background="@color/white"
+                    android:gravity="center"
+                    android:textColor="@color/black"
+                    android:textSize="30sp" />
+
                 <LinearLayout
                     android:id="@+id/game_board"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
-                    android:orientation="vertical"
-                    android:background="@color/white"
                     android:layout_weight="14"
+                    android:background="@color/white"
+                    android:orientation="vertical"
                     tools:ignore="NestedWeights">
 
                 </LinearLayout>
+
                 <TextView
                     android:id="@+id/txt_game_time"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
-                    android:textColor="@color/black"
-                    android:textSize="30sp"
-                    android:gravity="center"
-                    android:layout_weight="1"
                     android:layout_marginTop="10dp"
-                    android:background="@color/white" />
+                    android:layout_weight="1"
+                    android:background="@color/white"
+                    android:gravity="center"
+                    android:textColor="@color/black"
+                    android:textSize="30sp" />
             </LinearLayout>
 
         </FrameLayout>
