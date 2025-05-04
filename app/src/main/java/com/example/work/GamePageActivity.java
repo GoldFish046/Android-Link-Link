@@ -35,6 +35,9 @@ import com.example.work.utils.dbConnectHelper;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -377,9 +380,12 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
         values.put("score", score);
         values.put("hard", hard);
         values.put("time", timer / 10);
-        Date date = new Date();
-        SimpleDateFormat DateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        String dateString = DateFormat.format(date);
+        LocalDateTime localDateTime = LocalDateTime.now();
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+//        Date date = new Date();
+//        SimpleDateFormat DateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//        String dateString = DateFormat.format(date);
+        String dateString = localDateTime.format(dateTimeFormatter);
         Log.d("finishtime", dateString);
 //        String dateString = date.toString();
         values.put("finishtime", dateString);
