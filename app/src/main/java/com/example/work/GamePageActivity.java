@@ -26,6 +26,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
@@ -49,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 public class GamePageActivity extends AppCompatActivity implements View.OnClickListener {
 
     //计时器
-    private int timer = 0;
+    private int timer;
     //控制计时器的开关
     private boolean startTimer = true;
     //游戏UI面板的二维数组
@@ -73,6 +74,7 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
     private ScheduledExecutorService scheduledExecutorService;
     private SQLiteDatabase db;
     private int hard;
+    private boolean mode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,7 +85,7 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
         executorService = Executors.newFixedThreadPool(1);
         scheduledExecutorService = Executors.newScheduledThreadPool(1);
         //初始化数据
-        initData();
+        initData(savedInstanceState);
         //计时器
         timer();
 
@@ -94,18 +96,6 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
         super.onDestroy();
         executorService.shutdown();
         scheduledExecutorService.shutdown();
-    }
-
-    public void back() {
-        startTimer = false;
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("是否推出当前游戏，推出后游戏记录将会自动保存");
-        builder.setPositiveButton("确定", (dialog, which) -> saveScore());
-        builder.setNegativeButton("取消", (dialog, which) -> {
-            startTimer = true;
-//                timerHandler.postDelayed(timerRunnable, 0);
-        });
-        builder.create().show();
     }
 
     @Override
@@ -133,43 +123,80 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
                 clickedBoxId = -1;
             }
         });
+    }
 
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("hard", hard);
+    }
+
+    public void back() {
+        startTimer = false;
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("是否退出当前游戏");
+        builder.setPositiveButton("确定", (dialog, which) -> saveScore());
+        builder.setNegativeButton("取消", (dialog, which) -> {
+            startTimer = true;
+//                timerHandler.postDelayed(timerRunnable, 0);
+        });
+        builder.create().show();
     }
 
     /**
      * 初始化数据
      */
 
-    private void initData() {
+    private void initData(Bundle savedInstanceState) {
         executorService.submit(() -> {
             db = new dbConnectHelper(this).getWritableDatabase();
+            timer = 0;
             score = 0;
             boxColors = new int[]{R.color.box1, R.color.box2, R.color.box3, R.color.box4, R.color.box5, R.color.box6, R.color.box7, R.color.box8, R.color.box9, R.color.box10
                     , R.color.box11, R.color.box12, R.color.box13, R.color.box14, R.color.box15, R.color.box16, R.color.box17, R.color.box18, R.color.box19, R.color.box20};
             //随机选取的颜色种类
             List<Integer> selectColors = new ArrayList<>();
             //获取难度
-            Intent intent = getIntent();
-            String difficulty = intent.getStringExtra("difficulty");
-            if (difficulty != null) {
-                switch (difficulty) {
-                    case "easy":
-                        selectColors = MyRandom.selectColors(10);
-                        hard = 1;
-                        break;
-                    case "normal":
-                        selectColors = MyRandom.selectColors(15);
-                        hard = 2;
-                        break;
-                    case "hard":
-                        selectColors = MyRandom.selectColors(20);
-                        hard = 3;
-                        break;
-                }
+            if (savedInstanceState != null) {
+                hard = savedInstanceState.getInt("hard");
             } else {
-                Toast.makeText(this, "请选择游戏难度", Toast.LENGTH_SHORT).show();
-                finish();
+                Intent intent = getIntent();
+                String difficulty = intent.getStringExtra("difficulty");
+                if (difficulty != null) {
+                    switch (difficulty) {
+                        case "easy":
+                            selectColors = MyRandom.selectColors(10);
+                            hard = 1;
+                            break;
+                        case "normal":
+                            selectColors = MyRandom.selectColors(15);
+                            hard = 2;
+                            break;
+                        case "hard":
+                            selectColors = MyRandom.selectColors(20);
+                            hard = 3;
+                            break;
+                        case "timerEasy":
+                            selectColors = MyRandom.selectColors(10);
+                            hard = 4;
+                            break;
+                        case "timerNormal":
+                            selectColors = MyRandom.selectColors(15);
+                            hard = 5;
+                            break;
+                        case "timerHard":
+                            selectColors = MyRandom.selectColors(20);
+                            hard = 6;
+                            back();
+                        default:
+                            break;
+                    }
+                } else {
+                    Toast.makeText(this, "请选择游戏难度", Toast.LENGTH_SHORT).show();
+                    finish();
+                }
             }
+            mode = hard > 3;
             //各种颜色所有的方块数（随机）
             Map<String, Integer> colorNumbers = MyRandom.colorNumbers(selectColors);
             //二维数组用于存放各种颜色的位置（随机）
@@ -227,7 +254,18 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
         //计时器的runnable对象
         Runnable timerRunnable = () -> {
             if (startTimer) {
-                txtGameTime.setText("游戏时间：" + timer / 10.0 + "秒");
+                if (!mode) txtGameTime.setText("游戏时间：" + timer / 10.0 + "秒");
+                else txtGameTime.setText("倒计时:" + (120 - timer / 10.0) + "秒");
+                if (mode && (120 - timer / 10.0) <= 0 && score != 36) {
+                    startTimer = false;
+                    new AlertDialog.Builder(this).setTitle("你未能在规定时长内完成游戏")
+                            .setNegativeButton("点击退出", (dialog, which) -> finish())
+                            .setPositiveButton("重新开始", (dialog, which) -> {
+                                Intent intent = getIntent();
+                                finish();
+                                startActivity(intent);
+                            });
+                }
                 timer++;
 //                    timerHandler.postDelayed(this, 100);
             }
@@ -338,7 +376,7 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
         ContentValues values = new ContentValues();
         values.put("score", score);
         values.put("hard", hard);
-        values.put("time", timer/10);
+        values.put("time", timer / 10);
         Date date = new Date();
         SimpleDateFormat DateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String dateString = DateFormat.format(date);
@@ -359,13 +397,14 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
                 .setView(input)
                 .setPositiveButton("确定", (dialog, which) -> {
                     String name = input.getText().toString();
+                    if (name.isEmpty()) name = "未命名";
                     values.put("name", name);
-                    if(name.isEmpty()) name = "未命名";
                     db.insert("leaderboard", null, values);
                     Intent intent = new Intent(GamePageActivity.this, MainActivity.class);
                     startActivity(intent);
                     finish();
                 })
+                .setNegativeButton("取消", (dialog, which) -> finish())
                 .show();
         else new AlertDialog.Builder(this)
                 .setTitle("游戏结束")
@@ -373,13 +412,14 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
                 .setView(input)
                 .setPositiveButton("确定", (dialog, which) -> {
                     String name = input.getText().toString();
+                    if (name.isEmpty()) name = "未命名";
                     values.put("name", name);
-                    if(name.isEmpty()) name = "未命名";
                     db.insert("leaderboard", null, values);
                     Intent intent = new Intent(GamePageActivity.this, MainActivity.class);
                     startActivity(intent);
                     finish();
                 })
+                .setNegativeButton("取消保存", (dialog, which) -> finish())
                 .show();
     }
 

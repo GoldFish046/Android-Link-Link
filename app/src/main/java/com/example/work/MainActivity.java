@@ -37,17 +37,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             builder.setItems(new String[]{"简单", "普通", "困难"}, (dialog, which) -> {
                 switch (which) {
                     case 0:
-                        intent.putExtra("difficulty", "easy");
+                        if (v.getId() == R.id.btn_start_game) intent.putExtra("difficulty", "easy");
+                        else intent.putExtra("difficulty", "timerEasy");
                         break;
                     case 1:
-                        intent.putExtra("difficulty", "normal");
+                        if (v.getId() == R.id.btn_start_game)
+                            intent.putExtra("difficulty", "normal");
+                        else intent.putExtra("difficulty", "timerNormal");
                         break;
                     case 2:
-                        intent.putExtra("difficulty", "hard");
+                        if (v.getId() == R.id.btn_start_game) intent.putExtra("difficulty", "hard");
+                        else intent.putExtra("difficulty", "timerHard");
                         break;
                 }
-                if(v.getId() == R.id.btn_start_game) intent.putExtra("mode","normal");
-                else intent.putExtra("mode","timer");
                 startActivity(intent);
             });
             builder.setNegativeButton("取消", null);
