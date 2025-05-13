@@ -131,7 +131,13 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
         executorService.execute(() -> {
             if (clickedBoxId == -1) {
                 clickedBoxId = v.getId();
+                Handler handler = new Handler(Looper.getMainLooper());
+                handler.postDelayed(() -> {
+                    ImageButton  btn = findViewById(clickedBoxId);
+                    btn.setAlpha(0.5f);
+                },0);
             } else if (clickedBoxId != v.getId()) {
+                findViewById(clickedBoxId).setAlpha(1f);
                 List<Integer> path = getPath(clickedBoxId, v.getId());
                 if (path.get(0) != 0) {
                     musicController.play(2);
@@ -163,7 +169,6 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
         super.onSaveInstanceState(outState);
         outState.putInt("hard", hard);
     }
-
     public void back() {
         startTimer = false;
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -175,8 +180,6 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
         });
         builder.create().show();
     }
-
-
     private void BroadcastIntent(boolean mode) {
         Intent intent = new Intent();
         if (mode) intent.setAction("com.example.work.broadcast.GAME_SUCCESS");
@@ -188,7 +191,6 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
     /**
      * 初始化数据
      */
-
     private void initData(Bundle savedInstanceState) {
         executorService.submit(() -> {
             db = new dbConnectHelper(this).getWritableDatabase();
@@ -280,7 +282,7 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
     /**
      * 初始化UI
      */
-    @SuppressLint("ResourceType")
+//    @SuppressLint("ResourceType")
     private void initView() {
         Handler uiHandler = new Handler(Looper.getMainLooper());
         uiHandler.post(() -> {
@@ -327,7 +329,6 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
                     }
                 });
 //                Log.d("click",row.getId()+"");
-
                 gameBoard.addView(row);
             }
             TextView txtGameScore = findViewById(R.id.txt_game_score);
@@ -379,7 +380,6 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
 //            Log.d("click", String.valueOf(findViewById(path.get(1))==null));
             ImageButton box1 = findViewById(path.get(1));
             ImageButton box2 = findViewById(path.get(path.size() - 1));
-
             box1.setEnabled(false);
             box2.setEnabled(false);
             int[] box1Location = new int[2];
@@ -388,7 +388,6 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
             box2.getLocationInWindow(box2Location);
             //划线
             FrameLayout playGround = findViewById(R.id.playground);
-
             ImageView lineBoard = new ImageView(this);
             lineBoard.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 //            //获取画布
@@ -403,7 +402,6 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
             paint.setStrokeWidth(15);
 //            Log.d("click", "1111");
             //获取坐标点
-
             float[] pts = new float[(path.size() - 2) * 4];
 //            Log.d("click", "2222");
             int[] startAxis = new int[2];
@@ -531,7 +529,6 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
                 .show();
     }
 
-
     /**
      * 获取路径
      *
@@ -575,7 +572,7 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
                             path.add(end);
                             return path;
                         }
-                    }
+                    }else break;
                 }
             }
         }
@@ -599,7 +596,7 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
                             path.add(end);
                             return path;
                         }
-                    }
+                    }else break;
                 }
             }
         }
@@ -633,7 +630,6 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
      * @param optMode 整型类型，判断模式。0代表默认模式，1代表竖直模式，2代表水平模式
      * @return 返回一个整型数，-1代表不存在一个拐点的路径，反之则为拐点逻辑索引值
      */
-
     private int onePointEnable(int start, int end, Optional<Integer> optMode) {
         int[] pointPos = {0, 0};
         int[] result = {0, 0, 0, 0};
@@ -726,7 +722,6 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
      * @param end   整型类型，结束点的索引值
      * @return 返回一个整型列表，null代表不存在两个拐点路径，反之则为拐点逻辑索引值
      */
-
     public List<Integer> twoPointEnable(int start, int end) {
         int[] startPos = new int[]{start / 10, start % 10};
         List<Integer> points = new ArrayList<>();
