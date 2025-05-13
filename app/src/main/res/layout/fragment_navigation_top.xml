@@ -9,18 +9,31 @@
         android:id="@+id/title"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="horizontal"
         android:background="@color/green"
+        android:orientation="horizontal"
         android:padding="10dp"
         tools:ignore="UselessParent">
+
         <ImageButton
             android:id="@+id/btn_back"
             android:layout_width="50dp"
             android:layout_height="match_parent"
             android:background="@drawable/button_back"
             android:contentDescription="@string/btn_back"
-            android:src="@drawable/back"
-            android:scaleType="fitCenter"/>
+            android:scaleType="fitCenter"
+            android:src="@drawable/back" />
+
+        <TextView
+            android:id="@+id/txt_setting"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="@string/setting"
+            android:textAlignment="textEnd"
+            android:layout_marginTop="10dp"
+            android:textSize="25sp"
+            android:textColor="@color/black"/>
+
     </LinearLayout>
 
 </LinearLayout>

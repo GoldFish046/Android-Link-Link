@@ -1,18 +1,29 @@
 package com.example.work;
 
 import android.app.AlertDialog;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
+import android.widget.SeekBar;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.work.Service.MyMusicService;
 import com.example.work.utils.dbConnectHelper;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+
+    private SharedPreferences sharedPreferences;
+    SharedPreferences.Editor editor;
+    private MyMusicService.MusicController musicController;
 
     //    @SuppressLint("MissingInflatedId")
     @Override
@@ -25,6 +36,79 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.btn_start_timer).setOnClickListener(this);
         dbConnectHelper dbConnectHelper = new dbConnectHelper(MainActivity.this);
         SQLiteDatabase db = dbConnectHelper.getWritableDatabase();
+        sharedPreferences = getSharedPreferences("music", MODE_PRIVATE);
+        editor = sharedPreferences.edit();
+        int musicValue1 = sharedPreferences.getInt("music_value", 100);
+//        int musicValue2 = sharedPreferences.getInt("sound_value2", 0);
+        SeekBar seekBar1 = findViewById(R.id.seekBar1);
+//        SeekBar seekBar2 = findViewById(R.id.seekBar2);
+//        if (musicValue1 != 0) seekBar1.setProgress(musicValue1);
+//        else seekBar1.setProgress(100);
+        seekBar1.setProgress(musicValue1);
+//        if (musicValue2 != 0) seekBar2.setProgress(musicValue2);
+//        else seekBar2.setProgress(100);
+        seekBar1.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    editor.putInt("music_value", progress);
+                    editor.apply();
+                    musicController.change(progress);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+//        seekBar2.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+//            @Override
+//            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+//                if (fromUser) {
+//                    editor.putInt("sound_value2", progress);
+//                    editor.apply();
+//                    musicController.change();
+//                }
+//            }
+//
+//            @Override
+//            public void onStartTrackingTouch(SeekBar seekBar) {
+//            }
+//
+//            @Override
+//            public void onStopTrackingTouch(SeekBar seekBar) {
+//            }
+//        });
+        Intent musicIntent = new Intent(this, MyMusicService.class);
+        bindService(musicIntent, new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                musicController = (MyMusicService.MusicController) service;
+                musicController.play(1);
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+
+            }
+        }, Context.BIND_AUTO_CREATE);
+
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        musicController.play(1);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (musicController != null) musicController.stop();
     }
 
     @Override

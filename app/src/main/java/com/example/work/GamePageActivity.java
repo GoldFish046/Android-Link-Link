@@ -1,8 +1,12 @@
 package com.example.work;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.content.ComponentName;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -10,10 +14,10 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Looper;
 import android.text.InputFilter;
 import android.text.InputType;
-import android.text.Spanned;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,17 +34,14 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
+import com.example.work.Service.MyMusicService;
 import com.example.work.utils.MyRandom;
 import com.example.work.utils.dbConnectHelper;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -79,6 +80,18 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
     private int hard;
     private boolean mode;
 
+    public MyMusicService.MusicController getMusicController() {
+        startTimer = false;
+        return musicController;
+    }
+    public void startTimer(){
+        startTimer = true;
+    }
+
+    private MyMusicService.MusicController musicController;
+//    private MyMusicService.MusicController music2Controller;
+    private Intent musicIntent;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -99,6 +112,9 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
         super.onDestroy();
         executorService.shutdown();
         scheduledExecutorService.shutdown();
+        if (musicController != null) {
+            musicController.stop();
+        }
     }
 
     @Override
@@ -118,7 +134,21 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
             } else if (clickedBoxId != v.getId()) {
                 List<Integer> path = getPath(clickedBoxId, v.getId());
                 if (path.get(0) != 0) {
-                    Log.d("click", v.getId() + "//" + clickedBoxId);
+                    musicController.play(2);
+//                    startService(musicIntent);
+//                    bindService(musicIntent, new ServiceConnection() {
+//                        @Override
+//                        public void onServiceConnected(ComponentName name, IBinder service) {
+//                            musicController = (MyMusicService.MusicController) service;
+//                            Log.d("click",(musicController==null)+"");
+//                        }
+//
+//                        @Override
+//                        public void onServiceDisconnected(ComponentName name) {
+//                        }
+//                    }, Service.BIND_AUTO_CREATE);
+//                    Log.d("click",(musicController==null)+"");
+//                    Log.d("click", v.getId() + "//" + clickedBoxId);
                     score++;
                     drawLine(path);
                 }
@@ -144,6 +174,15 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
 //                timerHandler.postDelayed(timerRunnable, 0);
         });
         builder.create().show();
+    }
+
+
+    private void BroadcastIntent(boolean mode) {
+        Intent intent = new Intent();
+        if (mode) intent.setAction("com.example.work.broadcast.GAME_SUCCESS");
+        if (!mode) intent.setAction("com.example.work.broadcast.GAME_FAIL");
+        intent.putExtra("mode", mode);
+        sendBroadcast(intent);
     }
 
     /**
@@ -207,6 +246,33 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
             gameBoardBoxesLogic = MyRandom.getDislocateLogic(new ArrayList<>(gameBoardBoxes));
             Log.d("gameBoardBoxes", gameBoardBoxes.toString());
             Log.d("gameBoardBoxesLogic", gameBoardBoxesLogic.toString());
+            //开启音乐服务
+            musicIntent = new Intent(this, MyMusicService.class);
+            startService(musicIntent);
+            bindService(musicIntent, new ServiceConnection() {
+                @Override
+                public void onServiceConnected(ComponentName name, IBinder service) {
+                    musicController = (MyMusicService.MusicController) service;
+                }
+
+                @Override
+                public void onServiceDisconnected(ComponentName name) {
+
+                }
+            }, Context.BIND_AUTO_CREATE);
+//            bindService(musicIntent, new ServiceConnection() {
+//                @Override
+//                public void onServiceConnected(ComponentName name, IBinder service) {
+//                    music2Controller = (MyMusicService.MusicController) service;
+//                    music2Controller.play(1);
+//                }
+//
+//                @Override
+//                public void onServiceDisconnected(ComponentName name) {
+//
+//                }
+//            }, Context.BIND_AUTO_CREATE);
+
             initView();
         });
     }
@@ -214,13 +280,14 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
     /**
      * 初始化UI
      */
+    @SuppressLint("ResourceType")
     private void initView() {
         Handler uiHandler = new Handler(Looper.getMainLooper());
         uiHandler.post(() -> {
             //生成游戏面板
             LinearLayout gameBoard = findViewById(R.id.game_board);
             LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1);
-            btnParams.setMargins(10, 10, 10, 10);
+//            btnParams.setMargins(10, 10, 10, 10);
             for (int i = 1; i < 10; i++) {
                 LinearLayout row = new LinearLayout(this);
                 row.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
@@ -230,16 +297,42 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
                     ImageButton imageButton = new ImageButton(this);
                     imageButton.setId(i * 10 + j);
                     imageButton.setLayoutParams(btnParams);
-                    imageButton.setBackgroundColor(ContextCompat.getColor(this, boxColors[gameBoardBoxes.get(i - 1).get(j - 1)]));
+//                    imageButton.setBackground(ContextCompat.getDrawable(this, R.drawable.border));
+//                    imageButton.setBackgroundColor(ContextCompat.getColor(this, boxColors[gameBoardBoxes.get(i - 1).get(j - 1)]));
                     imageButton.setOnClickListener(this);
+//                    Bitmap bitmap = Bitmap.createBitmap(imageButton.getWidth(), imageButton.getHeight(), Bitmap.Config.ARGB_8888);
+//                    Canvas canvas = new Canvas(bitmap);
+//                    Paint paint = new Paint();
+//                    paint.setColor(Color.BLACK);
+//                    paint.setStrokeWidth(5);
+//                    canvas.drawText(String.valueOf(gameBoardBoxesLogic.get(i - 1).get(j)), (float) imageButton.getWidth() / 2, (float) imageButton.getHeight() / 2, paint);
+//                    imageButton.setImageBitmap(bitmap);
                     row.addView(imageButton);
                 }
+                uiHandler.post(() -> {
+                    for (int j = 0; j < 8; j++) {
+                        ImageButton imageButton = (ImageButton) row.getChildAt(j);
+//                        Log.d("click", imageButton.getId() + "//" + imageButton.getHeight() + "//" + imageButton.getWidth());
+                        Bitmap bitmap = Bitmap.createBitmap(imageButton.getWidth(), imageButton.getHeight(), Bitmap.Config.ARGB_8888);
+                        Canvas canvas = new Canvas(bitmap);
+                        Paint paint = new Paint();
+                        canvas.drawColor(ContextCompat.getColor(this, boxColors[gameBoardBoxesLogic.get(row.getId()).get(j+1)]));
+                        paint.setColor(Color.BLACK);
+                        paint.setTextSize(80);
+                        paint.setStrokeWidth(10);
+                        canvas.drawText(String.valueOf(gameBoardBoxesLogic.get(row.getId()).get(j + 1)), (float) 15, (float) imageButton.getHeight() / 3 * 2, paint);
+                        paint.setStyle(Paint.Style.STROKE);
+                        canvas.drawRect(0, 0, imageButton.getWidth(), imageButton.getHeight(), paint);
+                        imageButton.setImageBitmap(bitmap);
+                    }
+                });
+//                Log.d("click",row.getId()+"");
+
                 gameBoard.addView(row);
             }
             TextView txtGameScore = findViewById(R.id.txt_game_score);
             txtGameScore.setText("得分：" + score);
 //            Log.d("Size", findViewById(R.id.gamePage).getHeight() + "//" + findViewById(R.id.title).getHeight() + "//" + findViewById(R.id.playground).getHeight());
-
 //            Log.d("Size", Arrays.toString(boxAxis));
 //            int[] location = new int[2];
 //            findViewById(temp).getLocationInWindow(location);
@@ -260,6 +353,7 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
                 if (!mode) txtGameTime.setText("游戏时间：" + timer / 10.0 + "秒");
                 else txtGameTime.setText("倒计时:" + (120 - timer / 10.0) + "秒");
                 if (mode && (120 - timer / 10.0) <= 0 && score != 36) {
+                    BroadcastIntent(false);
                     startTimer = false;
                     new AlertDialog.Builder(this).setTitle("你未能在规定时长内完成游戏")
                             .setNegativeButton("点击退出", (dialog, which) -> finish())
@@ -267,7 +361,7 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
                                 Intent intent = getIntent();
                                 finish();
                                 startActivity(intent);
-                            });
+                            }).show();
                 }
                 timer++;
 //                    timerHandler.postDelayed(this, 100);
@@ -323,8 +417,8 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
             if (path.size() == 4) {
                 pts[2] = pts[0] + (float) (path.get(2) % 10 - path.get(1) % 10) * boxSize[0];
                 pts[3] = pts[1] + (float) (path.get(2) / 10 - path.get(1) / 10) * boxSize[1];
-                pts[pts.length - 4] = pts[pts.length - 2] + (float) (path.get(3) % 10 - path.get(2) % 10) * boxSize[0];
-                pts[pts.length - 3] = pts[pts.length - 1] + (float) (path.get(3) / 10 - path.get(2) / 10) * boxSize[1];
+                pts[pts.length - 4] = pts[pts.length - 2] + (float) (path.get(2) % 10 - path.get(3) % 10) * boxSize[0];
+                pts[pts.length - 3] = pts[pts.length - 1] + (float) (path.get(2) / 10 - path.get(3) / 10) * boxSize[1];
             }
             if (path.size() == 5) {
                 pts[2] = pts[0] + (float) (path.get(2) % 10 - path.get(1) % 10) * boxSize[0];
@@ -358,6 +452,11 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
             Handler uiHandler2 = new Handler(Looper.getMainLooper());
             uiHandler2.postDelayed(() -> {
                 playGround.removeView(lineBoard);
+                Bitmap bitmap1 = Bitmap.createBitmap(box1.getWidth(), box1.getHeight(), Bitmap.Config.ARGB_8888);
+                Canvas canvas1 = new Canvas(bitmap1);
+                canvas1.drawColor(Color.WHITE);
+                box1.setImageBitmap(bitmap1);
+                box2.setImageBitmap(bitmap1);
                 box1.getBackground().setAlpha(0);
                 box2.getBackground().setAlpha(0);
             }, 200);
@@ -365,7 +464,10 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
             txtGameScore.setText("得分：" + score);
             gameBoardBoxesLogic.get(path.get(1) / 10).set(path.get(1) % 10, -1);
             gameBoardBoxesLogic.get(path.get(path.size() - 1) / 10).set(path.get(path.size() - 1) % 10, -1);
-            if (score == 36) saveScore();
+            if (score == 36) {
+                BroadcastIntent(true);
+                saveScore();
+            }
 
         });
     }

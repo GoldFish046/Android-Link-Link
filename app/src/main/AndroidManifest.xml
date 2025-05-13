@@ -12,6 +12,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Work"
         tools:targetApi="31">
+        <service
+            android:name=".Service.MyMusicService"
+            android:enabled="true"
+            android:exported="false">
+
+        </service>
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -21,14 +28,26 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".GamePageActivity"
+        <activity
+            android:name=".GamePageActivity"
             android:exported="true">
 
         </activity>
-        <activity android:name=".LeaderBoardActivity"
+        <activity
+            android:name=".LeaderBoardActivity"
             android:exported="true">
 
         </activity>
+
+        <receiver
+            android:name=".receiver.MyBroadcastReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.example.work.broadcast.GAME_SUCCESS" />
+                <action android:name="com.example.work.broadcast.GAME_FAIL" />
+            </intent-filter>
+        </receiver>
     </application>
-
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"
+        tools:ignore="ManifestOrder" />
 </manifest>
