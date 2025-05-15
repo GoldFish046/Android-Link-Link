@@ -100,6 +100,9 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
         txtGameTime = findViewById(R.id.txt_game_time);
         executorService = Executors.newFixedThreadPool(1);
         scheduledExecutorService = Executors.newScheduledThreadPool(1);
+        Intent intent=new Intent();
+        intent.putExtra("returnFirst","gamePage");
+        setResult(RESULT_OK,intent);
         //初始化数据
         initData(savedInstanceState);
         //计时器
@@ -506,8 +509,6 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
                     if (name.isEmpty()) name = "未命名";
                     values.put("name", name);
                     db.insert("leaderboard", null, values);
-                    Intent intent = new Intent(GamePageActivity.this, MainActivity.class);
-                    startActivity(intent);
                     finish();
                 })
                 .setNegativeButton("取消", (dialog, which) -> finish())
@@ -521,8 +522,6 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
                     if (name.isEmpty()) name = "未命名";
                     values.put("name", name);
                     db.insert("leaderboard", null, values);
-                    Intent intent = new Intent(GamePageActivity.this, MainActivity.class);
-                    startActivity(intent);
                     finish();
                 })
                 .setNegativeButton("取消保存", (dialog, which) -> finish())

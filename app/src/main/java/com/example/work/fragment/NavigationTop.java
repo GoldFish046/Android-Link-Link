@@ -36,8 +36,7 @@ public class NavigationTop extends Fragment {
                 AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
                 builder.setTitle("音量调节");
                 SeekBar seekBar = new SeekBar(requireActivity());
-                seekBar.setMax(100);
-                SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("music_value", 0);
+                SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("music", 0);
                 seekBar.setProgress(sharedPreferences.getInt("music_value", 100));
                 seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                     @Override

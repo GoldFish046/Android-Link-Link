@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.database.sqlite.SQLiteDatabase;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
@@ -14,16 +15,23 @@ import android.view.View;
 import android.widget.SeekBar;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.work.Service.MyMusicService;
 import com.example.work.utils.dbConnectHelper;
+
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private SharedPreferences sharedPreferences;
     SharedPreferences.Editor editor;
     private MyMusicService.MusicController musicController;
+    private ActivityResultLauncher<Intent> launcher;
 
     //    @SuppressLint("MissingInflatedId")
     @Override
@@ -36,6 +44,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.btn_start_timer).setOnClickListener(this);
         dbConnectHelper dbConnectHelper = new dbConnectHelper(MainActivity.this);
         SQLiteDatabase db = dbConnectHelper.getWritableDatabase();
+        launcher=registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), o -> {
+            if(o.getResultCode()==RESULT_OK){
+                if (o.getData() != null && Objects.equals(o.getData().getStringExtra("returnFirst"), "gamePage")) {
+                    musicController.play(1);
+                }
+            }
+        });
         sharedPreferences = getSharedPreferences("music", MODE_PRIVATE);
         editor = sharedPreferences.edit();
         int musicValue1 = sharedPreferences.getInt("music_value", 100);
@@ -102,8 +117,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onRestart() {
         super.onRestart();
-        musicController.play(1);
+//        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+//        Log.d("dclick",audioManager.isMusicActive()+"");
     }
+
 
     @Override
     protected void onDestroy() {
@@ -134,7 +151,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         else intent.putExtra("difficulty", "timerHard");
                         break;
                 }
-                startActivity(intent);
+                launcher.launch(intent);
             });
             builder.setNegativeButton("取消", null);
             builder.create().show();
