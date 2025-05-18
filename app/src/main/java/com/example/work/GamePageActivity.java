@@ -1,6 +1,5 @@
 package com.example.work;
 
-import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.ContentValues;
@@ -32,9 +31,11 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.example.work.Service.MyMusicService;
+import com.example.work.receiver.MyBroadcastReceiver;
 import com.example.work.utils.MyRandom;
 import com.example.work.utils.dbConnectHelper;
 
@@ -107,6 +108,7 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
         initData(savedInstanceState);
         //计时器
         timer();
+        BroadcastIntent(false);
 
     }
 
@@ -184,7 +186,10 @@ public class GamePageActivity extends AppCompatActivity implements View.OnClickL
         builder.create().show();
     }
     private void BroadcastIntent(boolean mode) {
-        Intent intent = new Intent();
+        if(ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(this,new String[]{android.Manifest.permission.POST_NOTIFICATIONS},1);
+        }
+        Intent intent = new Intent(this,MyBroadcastReceiver.class);
         if (mode) intent.setAction("com.example.work.broadcast.GAME_SUCCESS");
         if (!mode) intent.setAction("com.example.work.broadcast.GAME_FAIL");
         intent.putExtra("mode", mode);

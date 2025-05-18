@@ -1,6 +1,7 @@
 package com.example.work.receiver;
 
-import android.app.Notification;
+import static androidx.core.content.ContextCompat.getSystemService;
+
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
@@ -8,9 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.widget.Toast;
 
-import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
-import androidx.core.content.ContextCompat;
 
 import com.example.work.R;
 
@@ -19,11 +18,10 @@ public class MyBroadcastReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         boolean isFinish = intent.getBooleanExtra("mode", false);
-        NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         String channelId;
         CharSequence channelName = "连连看";
         String channelDescription;
-
+        int importance = NotificationManager.IMPORTANCE_DEFAULT;
         if (isFinish) {
             Toast.makeText(context, "游戏结束", Toast.LENGTH_SHORT).show();
             channelId = "1";
@@ -33,20 +31,29 @@ public class MyBroadcastReceiver extends BroadcastReceiver {
             channelId = "2";
             channelDescription = "游戏失败";
         }
-        NotificationChannel channel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_DEFAULT);
+        NotificationChannel channel = new NotificationChannel(channelId, channelName, importance);
         channel.setDescription(channelDescription);
-        manager.createNotificationChannel(channel);
-        if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
-            return;
-        else {
-            Notification notification = new NotificationCompat.Builder(context, channelId)
-                    .setContentTitle("连连看")
-                    .setContentText(isFinish ? "游戏结束" : "游戏失败")
-                    .setWhen(System.currentTimeMillis())
-                    .setSmallIcon(R.mipmap.ic_launcher)
-                    .setAutoCancel(true)
-                    .build();
-            manager.notify(1, notification);
+        NotificationManager manager = getSystemService(context, NotificationManager.class);
+        if (manager != null) {
+            manager.createNotificationChannel(channel);
         }
+        NotificationCompat.Builder notification = new NotificationCompat.Builder(context, channelId)
+                .setContentTitle("连连看")
+                .setContentText(isFinish ? "游戏结束111111111" : "游戏失败")
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setAutoCancel(true);
+        if (manager != null) {
+            manager.notify(1, notification.build());
+        }
+////            Notification notification = new NotificationCompat.Builder(context, channelId)
+////                    .setContentTitle("连连看")
+////                    .setContentText(isFinish ? "游戏结束" : "游戏失败")
+////                    .setWhen(System.currentTimeMillis())
+////                    .setSmallIcon(R.mipmap.ic_launcher)
+////                    .setAutoCancel(true)
+////                    .build();
+////            manager.notify(1, notification);
+//        }
     }
 }

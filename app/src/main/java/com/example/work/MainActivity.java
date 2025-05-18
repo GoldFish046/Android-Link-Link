@@ -20,6 +20,8 @@ import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.example.work.Service.MyMusicService;
 import com.example.work.utils.dbConnectHelper;
@@ -111,7 +113,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             }
         }, Context.BIND_AUTO_CREATE);
-
+        if(ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(this,new String[]{android.Manifest.permission.POST_NOTIFICATIONS},1);
+        }
     }
 
     @Override
